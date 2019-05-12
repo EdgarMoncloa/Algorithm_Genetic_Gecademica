@@ -27,17 +27,40 @@ class AG:
         self.min_value = min_value
         self.pressure = pressure
         self.mutation_probability = mutation_probability
+        self.max_value = num_classes*num_classes
         population = self.create_population()
+
+        last_average = 0
+        dash = '-'*55
+        print(dash)
+        print('|{:<10s}|{:<10s}|{:<10s}|{:<10s}|{:<10s}|'.format(
+            'Iteracion','Promedio','Diferencia','Maximo','ValOpt'))
+        print(dash)
         for idx in range(0,1000000):
             # population = self.simple_selection_and_population(population)
             self.rulete_selection_and_population(population)
             population = self.mutation(population)
-            if idx % 1000 == 0:
-                print('-----BEST-----')
-                print(num_classes*num_classes)
-                print('-----{}-----'.format(idx))
+            # Prints
+            if idx % 100 == 0:
+                arrayFitness = []
                 for element in population:
-                  print(self.fitness_calculate(element))
+                    arrayFitness.append(self.fitness_calculate(element))
+                average= int(sum(arrayFitness)/num_population_members)                 
+                data = [
+                    idx,
+                    average,
+                    average-last_average,
+                    max(arrayFitness),
+                    self.max_value,
+                ]
+                last_average=average
+                
+                print('|{:<10s}|{:<10s}|{:<10s}|{:<10s}|{:<10s}|'.format(
+                    str(data[0]),
+                    str(data[1]),
+                    str(data[2]),
+                    str(data[3]),
+                    str(data[4])))
                     # print(element)
                 # for element in population:
                     # print(self.fitness_calculate(element))
@@ -86,6 +109,10 @@ class AG:
                 # if(element[1]!=compare_element[1] and element[3]!=compare_element[3]):
                     # fitness += 1
         # print(count)
+        if fitness == self.max_value:
+            print('Maximo valor encontrado:')
+            print(individual)
+            exit()
         return fitness
 
     def reproduction(self,parents,population):        
@@ -144,14 +171,14 @@ class AG:
         return population
 
     def mutation(self,population):
-        for x in range(0,5+int(self.num_classes/10)):
-            for idx in range(len(population)):
-                if random.random() <= self.mutation_probability:
-                    cut_point = random.randint(0, self.num_classes-1)
+        # for x in range(0,5+int(self.num_classes/10)):
+        for idx in range(len(population)):
+            if random.random() <= self.mutation_probability:
+                cut_point = random.randint(0, self.num_classes-1)
+                new_class = self.create_class()
+                while(new_class == population[idx][cut_point]):
                     new_class = self.create_class()
-                    while(new_class == population[idx][cut_point]):
-                        new_class = self.create_class()
-                    population[idx][cut_point]=new_class
+                population[idx][cut_point]=new_class
         return population        
 
 
@@ -165,5 +192,5 @@ algorithm= AG(
     num_teachers = 60,
     min_value = 0,
     pressure = 10,  # individuos que se seleccionan para reporduccion
-    mutation_probability = .2,    
+    mutation_probability = .35,    
 )

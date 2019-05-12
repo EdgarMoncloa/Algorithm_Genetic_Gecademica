@@ -8,7 +8,7 @@ class AG:
     def __init__(
             self,
             num_parameters,
-            num_individual_population,
+            num_population_members,
             num_classes,
             num_subject_matters,
             num_classrooms,
@@ -18,7 +18,7 @@ class AG:
             pressure,
             mutation_probability):
         self.num_parameters = num_parameters
-        self.num_individual_population = num_individual_population
+        self.num_population_members = num_population_members
         self.num_classes = num_classes
         self.num_subject_matters = num_subject_matters
         self.num_classrooms = num_classrooms
@@ -34,14 +34,14 @@ class AG:
             population = self.mutation(population)
             if idx % 1000 == 0:
                 print('-----BEST-----')
-                print(num_classes*2*2)
+                print(num_classes*num_classes)
                 print('-----{}-----'.format(idx))
-                for element in population[0]:
-                    print(element)
-                print(self.fitness_calculate(population[0]))
+                for element in population:
+                  print(self.fitness_calculate(element))
+                    # print(element)
                 # for element in population:
                     # print(self.fitness_calculate(element))
-        population
+        # population
 
     
     def create_class(self):
@@ -68,7 +68,7 @@ class AG:
 
     def create_population(self):
         population = []
-        for i in range(0,self.num_individual_population):
+        for i in range(0,self.num_population_members):
             population.append(self.create_individual())
         return population
 
@@ -90,7 +90,7 @@ class AG:
 
     def reproduction(self,parents,population):        
         # MIX
-        for idx in range(self.num_individual_population-self.pressure-1):
+        for idx in range(self.num_population_members-self.pressure-1):
             # Select one point to cut the individual
             cut_point = random.randint(1, self.num_classes)
             # Select two parents
@@ -131,7 +131,7 @@ class AG:
         # MIX
         
         choices = numpy.random.choice(
-            numpy.arange(0,self.num_individual_population),
+            numpy.arange(0,self.num_population_members),
             self.pressure,
             p=selection_probability)
         parents = [
@@ -157,7 +157,7 @@ class AG:
 
 algorithm= AG(
     num_parameters = 4,
-    num_individual_population = 30,
+    num_population_members = 30,
     num_classes = 100,
     num_subject_matters = 50,
     num_classrooms = 30,

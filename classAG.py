@@ -3,6 +3,7 @@ import time
 import numpy
 import pdb
 from collections import Counter
+import datetime
 
 # import numpy
 
@@ -30,6 +31,7 @@ class AG:
         self.min_value = min_value
         self.pressure = pressure
         self.mutation_probability = mutation_probability
+        self.date_start = datetime.datetime.now()
         population = self.create_population()
 
         last_average = 0
@@ -51,33 +53,25 @@ class AG:
                 mutation_probability = 1
             elif idx < 50000:
                 self.mutation_probability -= .00001 
-            # elif 10000 < idx < 50000:
-                # self.mutation_probability -= .00001
-            elif 50000 < idx < 62500:
+            elif 50000 < idx < 70000:
                 self.mutation_probability -= .00002
                 
             # ALGORITHM
-            # population = self.rulete_selection_and_population(population)
-            # population = self.mutation(population)
+            population = self.rulete_selection_and_population(population)
             population = self.uniform_mutation(population)
             #END ALGORITHM
 
             # first average
             if idx == 0:
                 array_first_min = []
-                # self.min_total = self.fitness_calculate(population[0])
                 for element in population:
                     fitness_value = self.fitness_calculate(element)   
                     array_first_min.append(fitness_value)
                     first_average += fitness_value
                 first_average = int(first_average / num_population_members)
                 self.min_total = min(array_first_min)
-            # COMPROBATION
-            # if idx % 250 == 0:
-            #     pdb.set_trace()
-            #     print('|{:<10s}|{:<10s}|{:<10s}|{:<10s}|{:<10s}|{:<10s}|{:<10s}|'.format(
-            #             'Iteracion','Promedio','Diferencia','Prob Mut','Minimo','Min Tot','Num muts'))
-            if idx % 10 == 0:
+            
+            if idx % 500 == 0:
                 # average
                 arrayFitness = []                
                 for element in population:
@@ -88,7 +82,6 @@ class AG:
                 # Global Minium
                 arrayFitness.append(self.min_total)
                 global_min = min(arrayFitness)
-
                 # Data to print 
                 data = [
                     idx,
@@ -112,11 +105,6 @@ class AG:
                     ))
             #END WHILE 
             idx +=1
-                    # print(element)
-                # for element in population:
-                    # print(self.fitness_calculate(element))
-        # population
-    
     def create_class(self):
         asigned_class = []
         # 0 subject matters
@@ -150,26 +138,20 @@ class AG:
         return population
 
     def fitness_calculate(self,individual):
-        fitness = 1
+        fitness = 0
         count = 0     
         # subject_matters = []  
-        classrooms = []
-        teachers = []
+        classrooms_horaries = []
+        teachers_horaries = []
         horaries = []
         for element in individual:
             # subject_matters.append(element[0])
-            classrooms.append(element[1])
-            teachers.append(element[2])
-            horaries.append(element[3])
-        for idx_element,element in enumerate(individual):
-            individual_compare = list(individual)
-            individual_compare.pop(idx_element)
-            for compare_element in individual_compare:
-                count += 1
-                if(element[2]==compare_element[2] and element[3] ==compare_element[3]):
-                    fitness += 1
-                if(element[1]==compare_element[1] and element[3]==compare_element[3]):
-                    fitness += 1
+            classrooms_horaries.append((element[1],element[3]))
+            teachers_horaries.append((element[2],element[3]))
+        repeat_classrooms =Counter(classrooms_horaries)
+        repeat_teachers = Counter(teachers_horaries)
+        fitness += sum([k[1] for k in repeat_classrooms if repeat_classrooms[k] > 1])
+        fitness += sum([k[1] for k in repeat_teachers if repeat_teachers[k] > 1])
         # print(count)
         # print(individual[3])
         if self.min_total > fitness:
@@ -178,6 +160,9 @@ class AG:
             print('Maximo valor encontrado:')
             for element in individual:
                 print(element)
+            print('Hora de inicio: ' + str(self.date_start))
+            print('Hora de finalizacion: ' + str(datetime.datetime.now()))
+            print('Tiempo que se tardo: ' + str(datetime.datetime.now().minute-self.date_start.minute)  )
             exit()
         return fitness
 
@@ -283,13 +268,13 @@ class AG:
 
 algorithm= AG(
     num_parameters = 4,
-    num_population_members = 50,
-    num_classes = 150,
-    num_subject_matters = 150,
-    num_classrooms = 20,
+    num_population_members = 20,
+    num_classes = 62,
+    num_subject_matters = 50,
+    num_classrooms = 30,
     num_horaries = 5,
-    num_teachers = 50,
+    num_teachers = 52,
     min_value = 1,
-    pressure = 5,  # individuos que se seleccionan para reporduccion
+    pressure = 10,  # individuos que se seleccionan para reporduccion
     mutation_probability = .2, #Por ahora no importa    
 )

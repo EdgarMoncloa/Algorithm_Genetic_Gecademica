@@ -1,6 +1,9 @@
 import random
 import time
 import numpy
+import pdb
+from collections import Counter
+
 # import numpy
 
 
@@ -41,47 +44,59 @@ class AG:
         print(dash)
         # calculates
         self.mutation_probability = 1
-        for idx in range(0,100000):
+        idx = 0
+        while True:
             self.num_mutations=0
             if idx == 0:
-                mutation_probability = .8
-            elif idx < 10000:
-                self.mutation_probability -= .0005
-            elif 10000 < idx < 50000:
-                self.mutation_probability -= .001
-            elif 50000 < idx < 75000:
-                self.mutation_probability -= .002
+                mutation_probability = 1
+            elif idx < 50000:
+                self.mutation_probability -= .00001 
+            # elif 10000 < idx < 50000:
+                # self.mutation_probability -= .00001
+            elif 50000 < idx < 62500:
+                self.mutation_probability -= .00002
+                
             # ALGORITHM
-            population = self.simple_selection_and_population(population)
+            # population = self.rulete_selection_and_population(population)
             # population = self.mutation(population)
             population = self.uniform_mutation(population)
             #END ALGORITHM
 
             # first average
             if idx == 0:
-                self.min_total = self.fitness_calculate(population[0])
+                array_first_min = []
+                # self.min_total = self.fitness_calculate(population[0])
                 for element in population:
-                    first_average += self.fitness_calculate(element)                    
+                    fitness_value = self.fitness_calculate(element)   
+                    array_first_min.append(fitness_value)
+                    first_average += fitness_value
                 first_average = int(first_average / num_population_members)
-
-            # if idx % 100 == 0:
-            #     import pdb                
+                self.min_total = min(array_first_min)
+            # COMPROBATION
+            # if idx % 250 == 0:
             #     pdb.set_trace()
-            # Prints every x iterations
+            #     print('|{:<10s}|{:<10s}|{:<10s}|{:<10s}|{:<10s}|{:<10s}|{:<10s}|'.format(
+            #             'Iteracion','Promedio','Diferencia','Prob Mut','Minimo','Min Tot','Num muts'))
             if idx % 10 == 0:
                 # average
-                arrayFitness = []
+                arrayFitness = []                
                 for element in population:
                     arrayFitness.append(self.fitness_calculate(element))
-                average= int(sum(arrayFitness)/num_population_members)     
+                average= int(sum(arrayFitness)/num_population_members)  
+                # Local Minium
+                local_min = min(arrayFitness)
+                # Global Minium
+                arrayFitness.append(self.min_total)
+                global_min = min(arrayFitness)
+
                 # Data to print 
                 data = [
                     idx,
                     average,
                     average-last_average,
                     "{0:.7f}".format(self.mutation_probability),
-                    min(arrayFitness),
-                    self.min_total,
+                    local_min,
+                    global_min,
                     self.num_mutations
                 ]
                 last_average=average
@@ -95,6 +110,8 @@ class AG:
                     str(data[5]),
                     str(data[6]),
                     ))
+            #END WHILE 
+            idx +=1
                     # print(element)
                 # for element in population:
                     # print(self.fitness_calculate(element))
@@ -133,15 +150,23 @@ class AG:
         return population
 
     def fitness_calculate(self,individual):
-        fitness = 0
-        count = 0
+        fitness = 1
+        count = 0     
+        # subject_matters = []  
+        classrooms = []
+        teachers = []
+        horaries = []
+        for element in individual:
+            # subject_matters.append(element[0])
+            classrooms.append(element[1])
+            teachers.append(element[2])
+            horaries.append(element[3])
         for idx_element,element in enumerate(individual):
             individual_compare = list(individual)
             individual_compare.pop(idx_element)
             for compare_element in individual_compare:
                 count += 1
                 if(element[2]==compare_element[2] and element[3] ==compare_element[3]):
-                # if(element[2]!=compare_element[2] and element[3]!=compare_element[3]):
                     fitness += 1
                 if(element[1]==compare_element[1] and element[3]==compare_element[3]):
                     fitness += 1
@@ -158,17 +183,29 @@ class AG:
 
     def reproduction(self,best_individuals,population):        
         # MIX
-        for idx in range(len(population)):
+        num_reproductions = [0] * len(best_individuals)
+        idx = 0
+        new_population = []
+        while len(new_population) <= len(population):
             # Select one point to cut the individual
             cut_point = random.randint(1, self.num_classes)
             # Select two parents
-            parent_1 = numpy.random.choice(range(self.pressure))
-            parent_2 = numpy.random.choice(range(self.pressure))
-            while (parent_1==parent_2):
-                parent_2 = numpy.random.choice(range(self.pressure))
+            parent_1 = numpy.random.choice(range(len(best_individuals)))
+            parent_2 = numpy.random.choice(range(len(best_individuals)))
             # Mix genetic material
-            child = best_individuals[parent_1][:cut_point] + best_individuals[parent_2][cut_point:] 
-            population[idx] = child
+            child_1 = best_individuals[parent_1][:cut_point] + best_individuals[parent_2][cut_point:] 
+            new_population.append(child_1)
+            # Regulate number of children
+            num_reproductions[parent_1] +=1
+            num_reproductions[parent_2] +=1
+            if num_reproductions[parent_1] > 100:
+                best_individuals.pop(parent_1)
+                num_reproductions.pop(parent_1)
+                parent_2 -= 1
+            if num_reproductions[parent_2] > 100:
+                best_individuals.pop(parent_2)  
+                num_reproductions.pop(parent_2)  
+            idx += 1 
         return population
 
     def simple_selection_and_population(self,population):     
@@ -180,8 +217,6 @@ class AG:
         best_individuals = population[:self.pressure]
         
         for idx in range(len(population)):
-            import pdb
-            pdb.set_trace()
             # Select one point to cut the individual
             cut_point = random.randint(1, self.num_classes)
             # Select two parents
@@ -197,31 +232,27 @@ class AG:
             self.fitness_calculate(element) for element in population
         ]   
         sum_punctuations = sum(numpy.absolute(punctuations))
-        # print(sum_punctuations)
         selection_probability = [
             1/numpy.absolute(punctuation) for punctuation in punctuations
         ]
-        # print(selection_probability)
         sum_punctuations = sum(punctuations)
         selection_probability = [
             punctuation / sum_punctuations for punctuation in punctuations
         ]
-        # print(selection_probability)
         # MIX
         
         choices = numpy.random.choice(
             numpy.arange(0,self.num_population_members),
-            self.pressure,
+            int(len(population)/2), #self.pressure,
             p=selection_probability)
-        print(choices)
-        parents = [
+        best_individuals = [
             population[choice] for choice in choices
         ]
-        population=self.reproduction(
-            best_individuals = parents,
+        new_population=self.reproduction(
+            best_individuals = best_individuals,
             population = population,
         )
-        return population
+        return new_population
 
     def mutation(self,population):
         # for x in range(0,5+int(self.num_classes/10)):
@@ -236,30 +267,29 @@ class AG:
 
     def uniform_mutation(self,population):
         # if random.random() <= self.mutation_probability:  
-        # print(population[0])   
+        # print(population[0])  
         population_punctuated = [
             (self.fitness_calculate(element), element)for element in population]
         population = [
             element[1] for element in sorted(population_punctuated,reverse=True)]
-        for idx in range(self.num_population_members):
-            if random.random() < self.mutation_probability:
-                individual_1 = random.sample(range(self.num_classes),2)
-                individual_2 = random.sample(range(self.num_classes),2)
-                population[idx][individual_1] = self.create_class()
-                population[idx][individual_2] = self.create_class()
+        for idx,individual in enumerate(population):
+            if random.random() < self.mutation_probability:  
+                random_position = random.choice(
+                    range(self.num_classes))
+                individual[random_position] = self.create_class()
                 self.num_mutations+=1
         return population
 
 
 algorithm= AG(
     num_parameters = 4,
-    num_population_members = 30,
-    num_classes = 100,
-    num_subject_matters = 75,
-    num_classrooms = 50,
+    num_population_members = 50,
+    num_classes = 150,
+    num_subject_matters = 150,
+    num_classrooms = 20,
     num_horaries = 5,
     num_teachers = 50,
-    min_value = 0,
-    pressure = 30,  # individuos que se seleccionan para reporduccion
+    min_value = 1,
+    pressure = 5,  # individuos que se seleccionan para reporduccion
     mutation_probability = .2, #Por ahora no importa    
 )
